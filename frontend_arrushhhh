@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>АгроСкоринг — Умный Кабинет Фермера</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=IBM+Plex+Mono:wght@300;400;500&family=Noto+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080d0b;--bg2:#0d1710;--surface:#152019;--surface2:#1e2e24;
+  --border:#263d2e;--accent:#4ade80;--accent2:#86efac;--accent3:#bbf7d0;
+  --gold:#fbbf24;--red:#f87171;--orange:#fb923c;--blue:#60a5fa;
+  --text:#e2f0e7;--text2:#8db89a;--text3:#4e7a5c;
+  --mono:'IBM Plex Mono',monospace;--display:'Unbounded',sans-serif;--body:'Noto Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--body);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(74,222,128,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,.025) 1px,transparent 1px);
+  background-size:44px 44px;pointer-events:none;z-index:0}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,13,11,.93);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.nav-logo{font-family:var(--display);font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.12em}
+.nav-steps{display:flex;gap:2px}
+.nav-step{display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:6px;cursor:pointer;
+  transition:all .2s;font-size:10px;font-family:var(--mono);color:var(--text3);border:1px solid transparent;white-space:nowrap}
+.nav-step:hover{color:var(--text2);background:var(--surface)}
+.nav-step.active{color:var(--accent);background:rgba(74,222,128,.07);border-color:rgba(74,222,128,.18)}
+.nav-step.done{color:var(--accent2)}
+.step-num{width:17px;height:17px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+.nav-step.active .step-num{background:var(--accent);color:var(--bg)}
+.nav-step.done .step-num{background:var(--accent2);color:var(--bg)}
+.page{display:none;min-height:100vh;padding-top:56px;position:relative;z-index:1}
+.page.active{display:block}
+.container{max-width:840px;margin:0 auto;padding:44px 22px}
+.progress-line{display:flex;align-items:flex-start;margin-bottom:36px;animation:fadeUp .4s ease both}
+.prog-step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+.prog-dot{width:8px;height:8px;border-radius:50%;background:var(--border);margin-bottom:5px;position:relative;z-index:1;transition:all .3s}
+.prog-step.done .prog-dot{background:var(--accent)}
+.prog-step.active .prog-dot{background:var(--accent);box-shadow:0 0 0 4px rgba(74,222,128,.18)}
+.prog-label{font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center;letter-spacing:.06em;text-transform:uppercase}
+.prog-step.done .prog-label,.prog-step.active .prog-label{color:var(--accent2)}
+.prog-step::before{content:'';position:absolute;top:4px;left:-50%;right:50%;height:1px;background:var(--border)}
+.prog-step:first-child::before{display:none}
+.prog-step.done::before{background:var(--accent)}
+.page-header{margin-bottom:36px;animation:fadeUp .5s ease both}
+.page-tag{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.page-tag::before{content:'';display:block;width:20px;height:1px;background:var(--accent)}
+.page-title{font-family:var(--display);font-size:clamp(20px,3.5vw,30px);font-weight:800;line-height:1.2;margin-bottom:8px}
+.page-sub{color:var(--text2);font-size:13px;line-height:1.65}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:14px;animation:fadeUp .5s ease both}
+.card-title{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.form-row{display:grid;gap:10px;margin-bottom:10px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}
+.field{display:flex;flex-direction:column;gap:5px}
+label{font-size:10px;font-family:var(--mono);color:var(--text2);letter-spacing:.05em}
+input,select{background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 13px;outline:none;transition:border-color .2s;width:100%;-webkit-appearance:none}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,222,128,.09)}
+input.filled{color:var(--accent2);border-color:rgba(74,222,128,.28);background:rgba(74,222,128,.03)}
+.fnote{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.fnote.ok{color:var(--accent)}.fnote.warn{color:var(--orange)}.fnote.err{color:var(--red)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;border-radius:7px;border:none;cursor:pointer;font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.05em;transition:all .2s;text-transform:uppercase}
+.btn-primary{background:var(--accent);color:var(--bg)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 8px 22px rgba(74,222,128,.22)}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+.alert{padding:11px 14px;border-radius:7px;font-size:11px;font-family:var(--mono);line-height:1.55;margin-bottom:10px;display:flex;gap:9px;align-items:flex-start}
+.a-warn{background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.28);color:var(--orange)}
+.a-ok{background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.22);color:var(--accent2)}
+.a-err{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.28);color:var(--red)}
+.a-info{background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.22);color:var(--blue)}
+.a-fraud{background:rgba(248,113,113,.12);border:2px solid rgba(248,113,113,.5);color:var(--red);font-weight:600}
+.check-item{display:flex;align-items:flex-start;gap:11px;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity .15s}
+.check-item:last-child{border:none}
+.check-item:hover{opacity:.85}
+.checkbox{width:19px;height:19px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.check-item.req-item .checkbox{border-color:var(--orange)}
+.check-item.checked .checkbox{background:var(--accent);border-color:var(--accent)}
+.check-label{flex:1}
+.check-name{font-size:12px;margin-bottom:2px}
+.check-desc{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.check-pts{font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;margin-top:2px}
+.check-item.checked .check-pts{color:var(--accent)}
+.req-tag{font-family:var(--mono);font-size:9px;color:var(--orange);background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.25);border-radius:3px;padding:1px 5px;margin-left:6px;letter-spacing:.06em}
+.score-ring-wrap{display:flex;align-items:center;gap:28px;padding:22px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:18px;animation:fadeUp .4s ease both}
+.score-ring{position:relative;width:96px;height:96px;flex-shrink:0}
+.score-ring svg{transform:rotate(-90deg)}
+.score-ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-family:var(--display);font-size:20px;font-weight:800;color:var(--accent);line-height:1}
+.score-max{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.score-breakdown{flex:1}
+.score-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(38,61,46,.5)}
+.score-row:last-child{border:none}
+.score-label{color:var(--text2);font-family:var(--mono);font-size:10px}
+.score-val{font-family:var(--display);font-size:12px;font-weight:700;color:var(--accent)}
+.score-bar-wrap{height:2px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:3px}
+.score-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .8s cubic-bezier(.16,1,.3,1)}
+.type-grid{display:grid;gap:9px;margin-bottom:18px}
+.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+.type-card{padding:14px;background:var(--bg2);border:2px solid var(--border);border-radius:9px;cursor:pointer;transition:all .2s;text-align:center}
+.type-card:hover{border-color:rgba(74,222,128,.5);background:rgba(74,222,128,.03)}
+.type-card.selected{border-color:var(--accent);background:rgba(74,222,128,.07)}
+.type-icon{font-size:22px;margin-bottom:7px}
+.type-name{font-size:10px;font-weight:500;font-family:var(--mono);color:var(--text2);line-height:1.4}
+.type-card.selected .type-name{color:var(--accent)}
+.animal-table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--mono)}
+.animal-table th{text-align:left;padding:7px 11px;color:var(--text3);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.animal-table td{padding:9px 11px;border-bottom:1px solid rgba(38,61,46,.4)}
+.animal-table tr:last-child td{border:none}
+.s-ok{color:var(--accent)}.s-warn{color:var(--orange)}.s-err{color:var(--red)}
+.result-hero{text-align:center;padding:36px 22px;background:linear-gradient(135deg,rgba(74,222,128,.07),rgba(74,222,128,.015));border:1px solid rgba(74,222,128,.18);border-radius:16px;margin-bottom:22px;animation:fadeUp .6s ease both}
+.result-badge{display:inline-block;padding:5px 14px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.28);border-radius:100px;font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:18px;letter-spacing:.1em;text-transform:uppercase}
+.result-score{font-family:var(--display);font-size:68px;font-weight:800;color:var(--accent);line-height:1;margin-bottom:6px}
+.result-score-label{font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:14px}
+.result-status{font-size:15px;font-weight:500;color:var(--accent2)}
+.shortlist-card{padding:18px 20px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.2);border-radius:10px;margin-bottom:8px}
+.shortlist-header{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.rank-num{font-family:var(--display);font-size:32px;font-weight:800;color:var(--gold)}
+.rank-title{font-size:13px;color:var(--text2);margin-bottom:2px}
+.rank-sub{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.why-title{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.why-item{display:flex;align-items:baseline;gap:8px;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(38,61,46,.4)}
+.why-item:last-child{border:none}
+.why-pts{font-family:var(--display);font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0}
+.factor-card{display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:9px;margin-bottom:7px;animation:fadeUp .5s ease both}
+.factor-icon{width:38px;height:38px;border-radius:7px;background:rgba(74,222,128,.09);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.factor-info{flex:1}
+.factor-name{font-size:12px;font-weight:500;margin-bottom:3px}
+.factor-desc{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.factor-pts{font-family:var(--display);font-size:17px;font-weight:800;color:var(--accent);flex-shrink:0}
+.ai-box{padding:13px 15px;background:rgba(74,222,128,.03);border-left:3px solid var(--accent);border-radius:0 7px 7px 0;margin-top:14px;font-size:11px;font-family:var(--mono);color:var(--accent2);line-height:1.65}
+.ai-label{font-size:9px;color:var(--text3);margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase}
+.divider{height:1px;background:var(--border);margin:18px 0}
+.bottom-bar{display:flex;justify-content:space-between;align-items:center;padding-top:22px;border-top:1px solid var(--border);margin-top:28px}
+.qm-label{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.07em}
+.qm-outer{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.qm-inner{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.16,1,.3,1),background .5s}
+.qm-ticks{display:flex;justify-content:space-between;margin-top:4px;font-family:var(--mono);font-size:9px;color:var(--text3)}
+.qm-grade{font-family:var(--display);font-size:12px;font-weight:700;margin-top:6px}
+.fraud-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.fraud-modal{background:var(--surface);border:2px solid var(--red);border-radius:14px;padding:32px;max-width:420px;width:90%;text-align:center}
+.fraud-icon{font-size:48px;margin-bottom:14px}
+.fraud-title{font-family:var(--display);font-size:17px;font-weight:800;color:var(--red);margin-bottom:10px}
+.fraud-desc{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:20px;font-family:var(--mono);text-align:left}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){
+  .c2,.c3{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr}
+  nav{padding:0 14px}
+  .nav-step .step-text{display:none}
+  .container{padding:28px 14px}
+  .result-score{font-size:52px}
+  .score-ring-wrap{flex-direction:column;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">АГ·РО·СКОР</div>
+  <div class="nav-steps">
+    <div class="nav-step active" id="nav1" onclick="goPage(1)"><div class="step-num">1</div><span class="step-text">Профиль</span></div>
+    <div class="nav-step" id="nav2" onclick="goPage(2)"><div class="step-num">2</div><span class="step-text">Аудит</span></div>
+    <div class="nav-step" id="nav3" onclick="goPage(3)"><div class="step-num">3</div><span class="step-text">Заявка</span></div>
+    <div class="nav-step" id="nav4" onclick="goPage(4)"><div class="step-num">4</div><span class="step-text">Shortlist</span></div>
+  </div>
+</nav>
+
+<!-- FRAUD MODAL -->
+<div class="fraud-overlay" id="fraud-overlay" style="display:none">
+  <div class="fraud-modal">
+    <div class="fraud-icon">🚨</div>
+    <div class="fraud-title">АНОМАЛИЯ ОБНАРУЖЕНА</div>
+    <div class="fraud-desc" id="fraud-desc"></div>
+    <button class="btn btn-danger" onclick="document.getElementById('fraud-overlay').style.display='none'">Понятно — исправить заявку</button>
+  </div>
+</div>
+
+<!-- PAGE 1 -->
+<div class="page active" id="page1">
+<div class="container">
+  <div class="progress-line">
+    <div class="prog-step active"><div class="prog-dot"></div><div class="prog-label">Профиль</div></div>
+    <div class="prog-step"><div class="prog-dot"></div><div class="prog-label">Аудит</div></div>
+    <div class="prog-step"><div class="prog-dot"></div><div class="prog-label">Заявка</div></div>
+    <div class="prog-step"><div class="prog-dot"></div><div class="prog-label">Shortlist</div></div>
+  </div>
+  <div class="page-header">
+    <div class="page-tag">Страница 01</div>
+    <div class="page-title">Авто-профиль и<br>Наличие земель</div>
+    <div class="page-sub">Вход через ЭЦП (ИИН/БИН). Данные из ГБД ЮЛ и ИСЕГКН подтягиваются автоматически. Hard Filter: земли = 0 → скор 0.</div>
+  </div>
+
+  <div class="card" style="animation-delay:.08s">
+    <div class="card-title">🔐 Авторизация через ЭЦП</div>
+    <div class="form-row c2">
+      <div class="field">
+        <label>ИИН / БИН (12 цифр)</label>
+        <input type="text" id="iin" placeholder="000000000000" maxlength="12" oninput="onIin(this)">
+        <div class="fnote" id="iin-note">Ключ для связи ГБД ЮЛ · ИСЕГКН · ИСЖ · КГД</div>
+      </div>
+      <div class="field">
+        <label>Тип участника</label>
+        <select id="entity-type">
+          <option value="">— выберите —</option>
+          <option value="kfh">КФХ (Крестьянское хозяйство)</option>
+          <option value="ip">ИП</option>
+          <option value="too">ТОО / АО</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="loadProfile()" style="margin-top:6px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Авторизоваться и загрузить данные
+    </button>
+  </div>
+
+  <div class="card" id="profile-card" style="display:none;animation-delay:.12s">
+    <div class="card-title">👤 Профиль хозяйства (ГБД ЮЛ)</div>
+    <div class="form-row c2">
+      <div class="field"><label>Наименование хозяйства</label><input type="text" id="farm-name" class="filled" readonly></div>
+      <div class="field"><label>ОКЭД</label><input type="text" id="oked" class="filled" readonly></div>
+    </div>
+    <div class="form-row c2">
+      <div class="field"><label>Область</label><input type="text" id="region" class="filled" readonly></div>
+      <div class="field"><label>Район</label><input type="text" id="district" class="filled" readonly></div>
+    </div>
+    <div class="divider"></div>
+    <div class="card-title">🗂 Земельный блок (ИСЕГКН) — Hard Filter</div>
+    <div class="form-row c3">
+      <div class="field"><label>Кадастровый номер</label><input type="text" id="cadastre" class="filled" readonly></div>
+      <div class="field"><label>Общая площадь (га)</label><input type="text" id="land-total" class="filled" readonly></div>
+      <div class="field"><label>Пастбища (га)</label><input type="text" id="land-pasture" class="filled" readonly></div>
+    </div>
+    <div id="land-alert"></div>
+    <div class="divider"></div>
+    <div class="card-title">🐄 Поголовье (ИСЖ)</div>
+    <div class="form-row c3">
+      <div class="field"><label>КРС всего (голов)</label><input type="text" id="cattle-total" class="filled" readonly></div>
+      <div class="field"><label>в т.ч. коровы (голов)</label><input type="text" id="cows-total" class="filled" readonly></div>
+      <div class="field"><label>МРС (голов)</label><input type="text" id="sheep-total" class="filled" readonly></div>
+    </div>
+    <div class="divider"></div>
+    <div class="card-title">💳 Банковские реквизиты (для выплаты)</div>
+    <div class="form-row c2">
+      <div class="field"><label>ИИК (счёт)</label><input type="text" id="bank-iik" placeholder="KZ00 0000 0000 0000 0000"></div>
+      <div class="field"><label>БИК банка</label><input type="text" id="bank-bik" placeholder="KCJBKZKX"></div>
+    </div>
+  </div>
+
+  <div class="bottom-bar" id="p1-bottom" style="display:none">
+    <div></div>
+    <button class="btn btn-primary" onclick="goPage(2)">Далее: Аудит инфраструктуры →</button>
+  </div>
+</div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page" id="page2">
+<div class="container">
+  <div class="progress-line">
+    <div class="prog-step done"><div class="prog-dot"></div><div class="prog-label">Профиль</div></div>
+    <div class="prog-step active"><div class="prog-dot"></div><div class="prog-label">Аудит</div></div>
+    <div class="prog-step"><div class="prog-dot"></div><div class="prog-label">Заявка</div></div>
+    <div class="prog-step"><div class="prog-dot"></div><div class="prog-label">Shortlist</div></div>
+  </div>
+  <div class="page-header">
+    <div class="page-tag">Страница 02</div>
+    <div class="page-title">Аудит инфраструктуры<br>(Приложение 5, стр. 113)</div>
+    <div class="page-sub">Отметьте мощности хозяйства. Инфраструктурный балл — ключевой Merit-фактор скоринга.</div>
+  </div>
+
+  <div class="score-ring-wrap">
+    <div class="score-ring">
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle cx="48" cy="48" r="38" fill="none" stroke="#263d2e" stroke-width="8"/>
+        <circle cx="48" cy="48" r="38" fill="none" stroke="#4ade80" stroke-width="8"
+          stroke-dasharray="238.76" stroke-dashoffset="238.76" stroke-linecap="round"
+          id="score-circle" style="transition:stroke-dashoffset .8s cubic-bezier(.16,1,.3,1)"/>
+      </svg>
+      <div class="score-ring-text"><div class="score-num" id="infra-num">0</div><div class="score-max">/40</div></div>
+    </div>
+    <div class="score-breakdown">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em">Инфраструктурный Merit Score</div>
+      <div class="score-row"><span class="score-label">Водоснабжение / покрытие</span><span class="score-val" id="sv-w">+0</span></div>
+      <div class="score-bar-wrap"><div class="score-bar" id="sb-w" style="width:0%"></div></div>
+      <div class="score-row" style="margin-top:5px"><span class="score-label">Оборудование / весы</span><span class="score-val" id="sv-e">+0</span></div>
+      <div class="score-bar-wrap"><div class="score-bar" id="sb-e" style="width:0%"></div></div>
+      <div class="score-row" style="margin-top:5px"><span class="score-label">Сертификаты / доение</span><span class="score-val" id="sv-c">+0</span></div>
+      <div class="score-bar-wrap"><div class="score-bar" id="sb-c" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="animation-delay:.08s">
+    <div class="card-title">🏗 Тип объекта хозяйства</div>
+    <div class="type-grid g3" id="obj-grid">
+      <div class="type-card selected" onclick="selectObj(this,'krs')"><div class="type-icon">🐄</div><div class="type-name">Откормочная площадка (КРС/МРС)</div></div>
+      <div class="type-card" onclick="selectObj(this,'mtf')"><div class="type-icon">🥛</div><div class="type-name">Молочно-товарная ферма (МТФ)</div></div>
+      <div class="type-card" onclick="selectObj(this,'meat')"><div class="type-icon">🏭</div><div class="type-name">Мясокомбинат / Переработка</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="animation-delay:.12s">
+    <div class="card-title">✅ Чек-лист инфраструктуры</div>
+    <div id="checklist-wrap"></div>
+    <div class="ai-box">
+      <div class="ai-label">⚡ AI-объяснение</div>
+      <span id="audit-ai-text">Отметьте объекты инфраструктуры — система рассчитает Merit Score.</span>
+    </div>
+  </div>
+
+  <div class="card" id="milking-card" style="display:none;animation-delay:.16s">
+    <div class="card-title">🥛 Тип доильного зала (МТФ)</div>
+    <div class="alert a-info" style="margin-bottom:12px">ℹ️ Тип доильного зала — главный Merit-фактор для МТФ. Ручное доение = 0 баллов.</div>
+    <div class="type-grid g2" id="milking-grid">
+      <div class="type-card" onclick="selectMilking(this,'robot',20)"><div class="type-icon">🤖</div><div class="type-name">Робот-доильщик<br><span style="color:var(--accent);font-size:9px">+20 баллов (макс)</span></div></div>
+      <div class="type-card" onclick="selectMilking(this,'carousel',18)"><div class="type-icon">🎠</div><div class="type-name">«Карусель»<br><span style="color:var(--accent);font-size:9px">+18 баллов</span></div></div>
+      <div class="type-card" onclick="selectMilking(this,'herringbone',14)"><div class="type-icon">🌿</div><div class="type-name">«Ёлочка»<br><span style="color:var(--accent2);font-size:9px">+14 баллов</span></div></div>
+      <div class="type-card" onclick="selectMilking(this,'manual',0)"><div class="type-icon">✋</div><div class="type-name">Ручное доение<br><span style="color:var(--red);font-size:9px">0 баллов</span></div></div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-secondary" onclick="goPage(1)">← Назад</button>
+    <button class="btn btn-primary" onclick="goPage(3)">Далее: Заявка →</button>
+  </div>
+</div>
+</div>
+
+<!-- PAGE 3 -->
+<div class="page" id="page3">
+<div class="container">
+  <div class="progress-line">
+    <div class="prog-step done"><div class="prog-dot"></div><div class="prog-label">Профиль</div></div>
+    <div class="prog-step done"><div class="prog-dot"></div><div class="prog-label">Аудит</div></div>
+    <div class="prog-step active"><div class="prog-dot"></div><div class="prog-label">Заявка</div></div>
+    <div class="prog-step"><div class="prog-dot"></div><div class="prog-label">Shortlist</div></div>
+  </div>
+  <div class="page-header">
+    <div class="page-tag">Страница 03</div>
+    <div class="page-title">Динамические формы<br>заявок</div>
+    <div class="page-sub">3 типа субсидий с ML-фильтрами и анти-фродовой логикой. Проверка нормативных требований в реальном времени.</div>
+  </div>
+
+  <div class="card" style="animation-delay:.06s">
+    <div class="card-title">📋 Тип субсидии</div>
+    <div class="type-grid g3" id="sub-grid">
+      <div class="type-card selected" onclick="selectSub(this,'f1')"><div class="type-icon">🐂</div><div class="type-name">Форма 1<br>Закуп племенного скота (стр. 60)</div></div>
+      <div class="type-card" onclick="selectSub(this,'f6')"><div class="type-icon">🥛</div><div class="type-name">Форма 6<br>Производство молока (стр. 72)</div></div>
+      <div class="type-card" onclick="selectSub(this,'f9')"><div class="type-icon">⚖️</div><div class="type-name">Форма 9<br>Сдача на откорм (стр. 77)</div></div>
+    </div>
+  </div>
+
+  <!-- FORM 1 -->
+  <div id="wrap-f1">
+    <div class="card" style="animation-delay:.1s">
+      <div class="card-title">🐂 Тип А: Закуп племенного маточного поголовья — Форма 1, стр. 60</div>
+      <div class="alert a-info" style="margin-bottom:12px">ℹ️ Телки: 6–18 мес · Быки: 8–26 мес · Соотношение: 1 бык на 20–30 коров (вольная случка) или 1 на 100 (докрытие). Аномалия → скор = 0.</div>
+      <div class="form-row c2">
+        <div class="field">
+          <label>Номер ЭСФ</label>
+          <input type="text" id="f1-esf" placeholder="ESF-2024-XXXXXX" oninput="checkEsf()">
+          <div class="fnote" id="f1-esf-note">Проверка сделки через базу КГД</div>
+        </div>
+        <div class="field"><label>Дата ЭСФ</label><input type="date" id="f1-date"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="field">
+          <label>Куплено быков (голов)</label>
+          <input type="number" id="f1-bulls" placeholder="0" min="0" oninput="checkRatio()">
+          <div class="fnote">Норма: 1 бык на 20–30 коров</div>
+        </div>
+        <div class="field">
+          <label>Маточное поголовье в хозяйстве (голов)</label>
+          <input type="number" id="f1-cows" placeholder="0" min="0" oninput="checkRatio()">
+          <div class="fnote">Из ИСЖ — коровы старше 24 мес</div>
+        </div>
+      </div>
+      <div id="ratio-alert"></div>
+      <button class="btn btn-secondary" onclick="loadAnimals()" style="margin-top:8px">📥 Загрузить животных из ИСЖ (ИНЖ бирки)</button>
+    </div>
+    <div class="card" id="animals-card" style="display:none;animation-delay:.15s">
+      <div class="card-title">🏷 Список животных (ИНЖ из ИСЖ)</div>
+      <table class="animal-table">
+        <thead><tr><th>ИНЖ (бирка)</th><th>Пол</th><th>Порода</th><th>Возраст (мес)</th><th>ML-статус</th></tr></thead>
+        <tbody id="animals-tbody"></tbody>
+      </table>
+      <div id="animals-alerts" style="margin-top:10px"></div>
+      <div class="ai-box" id="f1-ai" style="display:none">
+        <div class="ai-label">⚡ AI-анализ поголовья</div>
+        <span id="f1-ai-text"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM 6 -->
+  <div id="wrap-f6" style="display:none">
+    <div class="card" style="animation-delay:.1s">
+      <div class="card-title">🥛 Тип Б: Удешевление производства молока — Форма 6, стр. 72</div>
+      <div class="alert a-info" style="margin-bottom:12px">ℹ️ Коровы ≥ 23 мес (племенные) или ≥ 28 мес (товарные). Соматика: Экстра &lt;200 тыс./мл (+баллы), Отклонение &gt;500 тыс./мл (субсидия может быть отклонена).</div>
+      <div class="form-row c2">
+        <div class="field">
+          <label>Объём молока в этом году (кг)</label>
+          <input type="number" id="f6-curr" placeholder="0" oninput="calcMilk()">
+        </div>
+        <div class="field">
+          <label>Объём молока за прошлый год (кг)</label>
+          <input type="number" id="f6-prev" placeholder="0" oninput="calcMilk()">
+          <div class="fnote" id="f6-growth-note">AI Logic: рост объёма → Merit Score растёт</div>
+        </div>
+      </div>
+      <div class="form-row c2">
+        <div class="field">
+          <label>БИН завода-покупателя (ЭСФ)</label>
+          <input type="text" id="f6-buyer" placeholder="000000000000" maxlength="12" oninput="chkBuyer('f6-buyer','f6-bnote')">
+          <div class="fnote" id="f6-bnote">Проверка в реестре МСХ РК</div>
+        </div>
+        <div class="field">
+          <label>Соматические клетки (тыс./мл)</label>
+          <input type="number" id="f6-somatic" placeholder="напр. 180" oninput="checkSomatic()">
+          <div class="fnote" id="f6-somatic-note">Экстра &lt;200 · Норма 200–400 · Риск 400–500 · Откл &gt;500</div>
+        </div>
+      </div>
+      <div id="somatic-meter" style="display:none;margin-top:12px">
+        <div class="qm-label">Качество молока</div>
+        <div class="qm-outer"><div class="qm-inner" id="qm-bar"></div></div>
+        <div class="qm-ticks"><span>Экстра</span><span>Норма</span><span>Риск</span><span>Откл.</span></div>
+        <div class="qm-grade" id="qm-grade"></div>
+      </div>
+      <div class="form-row c2" style="margin-top:10px">
+        <div class="field">
+          <label>Тип коров</label>
+          <select id="f6-cow-type" onchange="checkCowAge()">
+            <option value="">— выберите —</option>
+            <option value="breed">Племенные (порода)</option>
+            <option value="comm">Товарные</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Средний возраст коров (мес)</label>
+          <input type="number" id="f6-cow-age" placeholder="0" oninput="checkCowAge()">
+          <div class="fnote" id="f6-age-note">Племенные ≥ 23 мес · Товарные ≥ 28 мес</div>
+        </div>
+      </div>
+      <div class="ai-box" id="f6-ai" style="display:none">
+        <div class="ai-label">⚡ AI-анализ молочного производства</div>
+        <span id="f6-ai-text"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM 9 -->
+  <div id="wrap-f9" style="display:none">
+    <div class="card" style="animation-delay:.1s">
+      <div class="card-title">⚖️ Тип В: Сдача бычков на откорм — Форма 9, стр. 77</div>
+      <div class="alert a-info" style="margin-bottom:12px">ℹ️ Вес: 180–250 кг (верхний порог субсидирования). Hard Filter: бычок должен родиться в этом хозяйстве (проверка «Мать–Приплод» в ИСЖ).</div>
+      <button class="btn btn-secondary" onclick="loadBullocks()" style="margin-bottom:14px">📥 Загрузить бычков из ИСЖ</button>
+      <div class="form-row c2">
+        <div class="field">
+          <label>Живой вес при сдаче (кг)</label>
+          <input type="number" id="f9-weight" placeholder="180–250" oninput="checkBullWeight()">
+          <div class="fnote" id="f9-weight-note">Диапазон субсидии: 180–250 кг</div>
+        </div>
+        <div class="field">
+          <label>БИН откормочной площадки</label>
+          <input type="text" id="f9-buyer" placeholder="000000000000" maxlength="12" oninput="chkBuyer('f9-buyer','f9-bnote')">
+          <div class="fnote" id="f9-bnote">Мощность площадки должна быть ≥ 500 голов</div>
+        </div>
+      </div>
+      <div id="f9-bulls-table" style="display:none;margin-top:12px">
+        <table class="animal-table">
+          <thead><tr><th>ИНЖ (бычок)</th><th>Возраст (мес)</th><th>Мать (ИНЖ)</th><th>Происхождение</th><th>Статус</th></tr></thead>
+          <tbody id="bulls-tbody"></tbody>
+        </table>
+      </div>
+      <div class="ai-box" id="f9-ai" style="display:none">
+        <div class="ai-label">⚡ AI-анализ</div>
+        <span id="f9-ai-text"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-secondary" onclick="goPage(2)">← Назад</button>
+    <button class="btn btn-primary" onclick="calcResult()">Рассчитать Merit Score →</button>
+  </div>
+</div>
+</div>
+
+<!-- PAGE 4 -->
+<div class="page" id="page4">
+<div class="container">
+  <div class="progress-line">
+    <div class="prog-step done"><div class="prog-dot"></div><div class="prog-label">Профиль</div></div>
+    <div class="prog-step done"><div class="prog-dot"></div><div class="prog-label">Аудит</div></div>
+    <div class="prog-step done"><div class="prog-dot"></div><div class="prog-label">Заявка</div></div>
+    <div class="prog-step active"><div class="prog-dot"></div><div class="prog-label">Shortlist</div></div>
+  </div>
+  <div class="page-header">
+    <div class="page-tag">Страница 04</div>
+    <div class="page-title">Прозрачный<br>Shortlist</div>
+    <div class="page-sub">Merit-based рейтинг — место в очереди определяется баллом, а не временем подачи. Финальное решение за комиссией МСХ РК.</div>
+  </div>
+
+  <div class="result-hero">
+    <div class="result-badge">Заявка №<span id="app-num">—</span> · AI Merit Score</div>
+    <div class="result-score" id="final-score">—</div>
+    <div class="result-score-label">из 100 возможных баллов</div>
+    <div class="result-status" id="final-status">—</div>
+  </div>
+
+  <div class="shortlist-card" id="shortlist-card" style="display:none">
+    <div class="shortlist-header">
+      <div class="rank-num" id="rank-pos">#2</div>
+      <div>
+        <div class="rank-title">Место в очереди на субсидию</div>
+        <div class="rank-sub" id="rank-sub">из 1500 заявок · на основе Merit Score, а не времени подачи</div>
+      </div>
+      <div style="margin-left:auto;text-align:right;font-family:var(--mono);font-size:10px">
+        <div style="color:var(--accent)">Рекомендовано</div>
+        <div style="color:var(--text3);margin-top:2px">1-я очередь</div>
+      </div>
+    </div>
+    <div class="why-title">Почему такой балл:</div>
+    <div id="why-list"></div>
+  </div>
+
+  <div id="factor-wrap" style="display:none">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:20px 0 10px">Разбивка по факторам</div>
+    <div class="factor-card"><div class="factor-icon">🏗️</div><div class="factor-info"><div class="factor-name">Инфраструктура хозяйства</div><div class="factor-desc" id="fd-infra">Оборудование, водоснабжение, сертификаты</div></div><div class="factor-pts" id="fp-infra">+0</div></div>
+    <div class="factor-card" style="animation-delay:.05s"><div class="factor-icon">📈</div><div class="factor-info"><div class="factor-name">Динамика роста продукции</div><div class="factor-desc" id="fd-prod">Рост объёма производства (Форма 1-ВПЖ)</div></div><div class="factor-pts" id="fp-prod">+0</div></div>
+    <div class="factor-card" style="animation-delay:.1s"><div class="factor-icon">✅</div><div class="factor-info"><div class="factor-name">Соблюдение норм</div><div class="factor-desc" id="fd-norm">Возраст животных, ветеринария, документация</div></div><div class="factor-pts" id="fp-norm">+0</div></div>
+    <div class="factor-card" style="animation-delay:.15s"><div class="factor-icon">🌾</div><div class="factor-info"><div class="factor-name">Земельная база</div><div class="factor-desc" id="fd-land">Пастбища по нормативам</div></div><div class="factor-pts" id="fp-land">+0</div></div>
+    <div class="ai-box" style="margin-top:14px">
+      <div class="ai-label">⚡ AI-объяснение итогового решения</div>
+      <span id="result-ai"></span>
+    </div>
+    <div class="alert a-info" style="margin-top:14px">ℹ️ AI не является единственным источником истины. Система помогает принять решение, но не заменяет эксперта. Финальное решение принимает комиссия МСХ РК.</div>
+  </div>
+
+  <div class="bottom-bar" id="result-bar" style="display:none">
+    <button class="btn btn-secondary" onclick="goPage(3)">← Изменить заявку</button>
+    <button class="btn btn-primary" onclick="alert('Заявка отправлена в МСХ РК!\n\nВы получите SMS-уведомление в течение 3 рабочих дней.')">📤 Отправить в МСХ РК</button>
+  </div>
+</div>
+</div>
+
+<script>
+const S={infraScore:0,milkingScore:0,landScore:8,normScore:0,prodScore:0,fraud:false,objType:'krs',subType:'f1'};
+
+function goPage(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-step').forEach(s=>s.classList.remove('active','done'));
+  document.getElementById('page'+n).classList.add('active');
+  document.getElementById('nav'+n).classList.add('active');
+  for(let i=1;i<n;i++)document.getElementById('nav'+i).classList.add('done');
+  window.scrollTo(0,0);
+}
+
+// PAGE 1
+function onIin(el){
+  el.value=el.value.replace(/\D/g,'').slice(0,12);
+  const n=document.getElementById('iin-note');
+  if(el.value.length===12){n.textContent='✓ Формат корректен — подключение к ГБД ЮЛ';n.className='fnote ok';}
+  else{n.textContent=`Введено ${el.value.length}/12`;n.className='fnote';}
+}
+
+function loadProfile(){
+  if(document.getElementById('iin').value.length<12){alert('Введите 12-значный ИИН/БИН');return;}
+  if(!document.getElementById('entity-type').value){alert('Выберите тип участника');return;}
+  const d={'farm-name':'КФХ «Береке-Агро»','oked':'01.41 – Разведение молочного КРС','region':'Акмолинская область','district':'Атбасарский район','cadastre':'11-098-024-312','land-total':'1 240','land-pasture':'820','cattle-total':'340','cows-total':'98','sheep-total':'120'};
+  let delay=0;
+  for(const[id,v] of Object.entries(d)){setTimeout(()=>{const el=document.getElementById(id);if(el){el.value='';typeVal(el,v);}},delay);delay+=90;}
+  document.getElementById('profile-card').style.display='block';
+  document.getElementById('p1-bottom').style.display='flex';
+  setTimeout(()=>{
+    const la=document.getElementById('land-alert');
+    const pasture=820,cattle=340,norm=Math.round(cattle*2.1);
+    if(pasture<norm){la.innerHTML=`<div class="alert a-warn">⚠ ML-фактор: Риск — площадь пастбищ ${pasture} га меньше нормы (${norm} га для ${cattle} голов КРС). Балл снижается.</div>`;S.landScore=3;}
+    else{la.innerHTML=`<div class="alert a-ok">✓ Кормовая база достаточна: ${pasture} га на ${cattle} голов КРС.</div>`;S.landScore=8;}
+  },1500);
+}
+
+function typeVal(el,v){let i=0;const t=setInterval(()=>{el.value+=v[i];i++;if(i>=v.length)clearInterval(t);},20);}
+
+// PAGE 2
+const CL={
+  krs:[
+    {id:'kc1',name:'Вместимость ≥ 500 голов',desc:'Обязательно для мясного субсидирования (Hard Filter)',pts:12,cat:'e',req:true},
+    {id:'kc2',name:'Раскол и фиксатор с электронными весами',desc:'Данные по весу становятся достоверными — повышает доверие к заявке',pts:15,cat:'e'},
+    {id:'kc3',name:'Автопоилки с подогревом и твёрдое покрытие перед кормушками',desc:'Снижение потерь поголовья в зимний период',pts:8,cat:'w'},
+    {id:'kc4',name:'Ветеринарный изолятор / карантинная площадка',desc:'Обязательно для приёма племенного скота',pts:5,cat:'e'},
+  ],
+  mtf:[
+    {id:'mc1',name:'Автономное водоснабжение и автопоилки с подогревом',desc:'Независимый водозабор — стабильность производства',pts:8,cat:'w'},
+    {id:'mc2',name:'Лаборатория анализа молока (соматика, жир, белок)',desc:'Подтверждение качества экстра-класса',pts:10,cat:'e'},
+    {id:'mc3',name:'Холодильные установки (охлаждение до +4°C за 2 ч)',desc:'Соответствие нормам хранения',pts:7,cat:'e'},
+    {id:'mc4',name:'Сертификат ХАССП или ИСО 22000',desc:'Приоритет в субсидировании, доступ к экспорту',pts:5,cat:'c'},
+  ],
+  meat:[
+    {id:'pc1',name:'Промышленные электронные весы 1–5 тонн',desc:'Точность взвешивания туш и живого скота',pts:10,cat:'e'},
+    {id:'pc2',name:'Сертификат ХАССП (обязателен для мясокомбинатов)',desc:'Без ХАССП субсидия не предоставляется',pts:12,cat:'c',req:true},
+    {id:'pc3',name:'Холодильные камеры от –18°C',desc:'Хранение продукции по нормам',pts:8,cat:'e'},
+    {id:'pc4',name:'Водоснабжение и канализация (санитарные нормы)',desc:'Обязательное условие переработки',pts:5,cat:'w'},
+    {id:'pc5',name:'Ветеринарное заключение на производство',desc:'Разрешение на убой и переработку скота',pts:5,cat:'c'},
+  ]
+};
+
+function renderCL(type){
+  const items=CL[type]||CL.krs;
+  const wrap=document.getElementById('checklist-wrap');wrap.innerHTML='';S.checkedItems={};
+  items.forEach(item=>{
+    const div=document.createElement('div');
+    div.className='check-item'+(item.req?' req-item':'');div.id='ci-'+item.id;
+    div.onclick=()=>toggleCk(item);
+    div.innerHTML=`<div class="checkbox" id="cb-${item.id}"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#080d0b" stroke-width="3.5" style="display:none" id="sv-${item.id}"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="check-label"><div class="check-name">${item.name}${item.req?'<span class="req-tag">ОБЯЗАТЕЛЬНО</span>':''}</div><div class="check-desc">${item.desc}</div></div>
+      <div class="check-pts" id="pts-${item.id}">+${item.pts} б.</div>`;
+    wrap.appendChild(div);
+  });
+  document.getElementById('milking-card').style.display=type==='mtf'?'block':'none';
+  updInfra();
+}
+
+function toggleCk(item){
+  const el=document.getElementById('ci-'+item.id);const chk=!el.classList.contains('checked');
+  el.classList.toggle('checked',chk);document.getElementById('sv-'+item.id).style.display=chk?'block':'none';
+  S.checkedItems[item.id]=chk?item:null;updInfra();
+}
+
+function updInfra(){
+  let w=0,e=0,c=0;
+  const items=CL[S.objType]||CL.krs;
+  items.forEach(item=>{if(S.checkedItems&&S.checkedItems[item.id]){if(item.cat==='w')w+=item.pts;else if(item.cat==='e')e+=item.pts;else c+=item.pts;}});
+  const ml=S.milkingScore||0;
+  const total=Math.min(40,w+e+c+ml);S.infraScore=total;
+  document.getElementById('infra-num').textContent=total;
+  const circ=238.76;
+  document.getElementById('score-circle').style.strokeDashoffset=circ-(total/40)*circ;
+  document.getElementById('sv-w').textContent='+'+w;document.getElementById('sv-e').textContent='+'+(e+ml);document.getElementById('sv-c').textContent='+'+c;
+  document.getElementById('sb-w').style.width=Math.min(100,w*8)+'%';document.getElementById('sb-e').style.width=Math.min(100,(e+ml)*3.5)+'%';document.getElementById('sb-c').style.width=Math.min(100,c*7)+'%';
+  let t=`Предварительный балл: <strong>${total}/40</strong>. `;
+  if(e>=12||ml>=14)t+='Наличие электронных весов / автоматизированного зала повышает доверие к данным. ';
+  if(w>=7)t+='Автономное водоснабжение снижает производственные риски. ';
+  if(c>=5)t+='Наличие ХАССП открывает доступ к экспортным рынкам. ';
+  if(total<20)t+='<br><span style="color:var(--orange)">Рекомендация: добавьте инфраструктуру для повышения Merit Score.</span>';
+  document.getElementById('audit-ai-text').innerHTML=t;
+}
+
+function selectObj(el,type){
+  document.querySelectorAll('#obj-grid .type-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');S.objType=type;S.milkingScore=0;renderCL(type);
+}
+
+function selectMilking(el,type,pts){
+  document.querySelectorAll('#milking-grid .type-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');S.milkingScore=pts;updInfra();
+}
+
+renderCL('krs');
+
+// PAGE 3
+function selectSub(el,type){
+  document.querySelectorAll('#sub-grid .type-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');S.subType=type;
+  ['f1','f6','f9'].forEach(f=>document.getElementById('wrap-'+f).style.display=f===type?'block':'none');
+}
+
+function checkEsf(){
+  const v=document.getElementById('f1-esf').value;const n=document.getElementById('f1-esf-note');
+  if(v.length>8){n.textContent='✓ ЭСФ верифицирована в базе КГД — сделка подтверждена';n.className='fnote ok';}
+}
+
+function checkRatio(){
+  const bulls=parseInt(document.getElementById('f1-bulls').value)||0;
+  const cows=parseInt(document.getElementById('f1-cows').value)||0;
+  const el=document.getElementById('ratio-alert');
+  if(!bulls||!cows){el.innerHTML='';return;}
+  const ratio=cows/bulls;
+  if(ratio<10){
+    // FRAUD detection
+    el.innerHTML=`<div class="alert a-fraud">🚨 АНОМАЛИЯ — ФРОД: ${bulls} быков на ${cows} коров (соотношение 1:${Math.round(ratio)}). Норма: 1 бык на 20–30 коров. Запрос аномален → Скор = 0.</div>`;
+    document.getElementById('fraud-desc').innerHTML=`ML-анализ выявил аномалию в соотношении быков и маток:<br><br>
+      Запрошено: <strong>${bulls} быков</strong> на <strong>${cows} коров</strong><br>
+      Соотношение: <strong>1:${Math.round(ratio)}</strong><br>
+      Норма (вольная случка): <strong>1:20–30</strong><br>
+      Норма (докрытие): <strong>1:100</strong><br><br>
+      По нормативу на ${cows} коров достаточно <strong>${Math.ceil(cows/30)}–${Math.ceil(cows/20)} быков</strong>.<br>
+      Запрос на ${bulls} быков — признак фродовой заявки. Скор обнулён до 0.`;
+    document.getElementById('fraud-overlay').style.display='flex';
+    S.fraud=true;S.normScore=0;
+  } else if(ratio<20){
+    el.innerHTML=`<div class="alert a-warn">⚠ Соотношение 1:${Math.round(ratio)} ниже нормы (мин. 1:20). Балл снижен.</div>`;
+    S.fraud=false;
+  } else if(ratio<=100){
+    el.innerHTML=`<div class="alert a-ok">✓ Соотношение 1:${Math.round(ratio)} — в норме.</div>`;
+    S.fraud=false;S.normScore+=3;
+  } else {
+    el.innerHTML=`<div class="alert a-warn">⚠ Соотношение 1:${Math.round(ratio)} — возможно докрытие. Уточните режим случки.</div>`;
+    S.fraud=false;
+  }
+}
+
+function loadAnimals(){
+  const animals=[
+    {inzh:'KZ-ATB-0241',sex:'Тёлка',breed:'Казахская белоголовая',age:14,ok:true},
+    {inzh:'KZ-ATB-0242',sex:'Тёлка',breed:'Аулиекольская',age:9,ok:true},
+    {inzh:'KZ-ATB-0243',sex:'Бык',breed:'Герефорд',age:18,ok:true},
+    {inzh:'KZ-ATB-0244',sex:'Тёлка',breed:'Симментал',age:4,ok:false,reason:'4 мес < 6 мес (мин. для тёлок)'},
+    {inzh:'KZ-ATB-0245',sex:'Бык',breed:'Ангус',age:28,ok:false,reason:'28 мес > 26 мес (макс. для быков)'},
+    {inzh:'KZ-ATB-0246',sex:'Тёлка',breed:'Казахская белоголовая',age:16,ok:true},
+  ];
+  const tbody=document.getElementById('animals-tbody');tbody.innerHTML='';let errs=0;
+  animals.forEach(a=>{if(!a.ok)errs++;const tr=document.createElement('tr');tr.innerHTML=`<td style="font-family:var(--mono)">${a.inzh}</td><td>${a.sex}</td><td>${a.breed}</td><td style="font-family:var(--mono)">${a.age}</td><td class="${a.ok?'s-ok':'s-err'}" style="font-family:var(--mono);font-size:10px">${a.ok?'✓ OK':'✗ '+a.reason}</td>`;tbody.appendChild(tr);});
+  document.getElementById('animals-card').style.display='block';
+  const aa=document.getElementById('animals-alerts');aa.innerHTML='';
+  if(errs)aa.innerHTML+=`<div class="alert a-err">✗ ${errs} животных не прошли возрастной ML-фильтр — исключены из субсидии.</div>`;
+  aa.innerHTML+=`<div class="alert a-ok">✓ ${animals.length-errs} из ${animals.length} прошли проверку ИСЖ.</div>`;
+  document.getElementById('f1-ai').style.display='block';
+  document.getElementById('f1-ai-text').innerHTML=`Загружено <strong>${animals.length} животных</strong>. Прошли ML-фильтр: <strong style="color:var(--accent)">${animals.length-errs}</strong>. Отклонено: <strong style="color:var(--red)">${errs}</strong>.<br>Фильтры: Тёлки 6–18 мес · Быки 8–26 мес. Субсидия рассчитывается только по прошедшим фильтр.`;
+  S.normScore=Math.min(15,S.normScore+8-(errs*2));
+}
+
+function calcMilk(){
+  const curr=parseFloat(document.getElementById('f6-curr').value)||0;
+  const prev=parseFloat(document.getElementById('f6-prev').value)||0;
+  if(!curr||!prev)return;
+  const pct=((curr-prev)/prev*100).toFixed(1);const g=parseFloat(pct);
+  const n=document.getElementById('f6-growth-note');
+  if(g>12){S.prodScore=25;n.textContent=`✓ Рост +${pct}% → Merit Score +25 баллов`;n.className='fnote ok';}
+  else if(g>0){S.prodScore=15;n.textContent=`✓ Рост +${pct}% → Merit Score +15 баллов`;n.className='fnote ok';}
+  else{S.prodScore=0;n.textContent=`✗ Снижение ${pct}% — баллы не начисляются`;n.className='fnote err';}
+  document.getElementById('f6-ai').style.display='block';
+  document.getElementById('f6-ai-text').innerHTML=`Динамика производства молока: <strong style="color:${g>0?'var(--accent)':'var(--red)'}">${g>0?'+':''}${pct}%</strong> к прошлому году.<br>AI Logic (Форма 1-ВПЖ): ${g>12?'Отличный рост — Merit Score +25.':g>0?'Положительная динамика — Merit Score +15.':'Снижение объёма — баллы по этому фактору не начисляются.'}`;
+}
+
+function checkSomatic(){
+  const v=parseFloat(document.getElementById('f6-somatic').value)||0;if(!v)return;
+  const n=document.getElementById('f6-somatic-note');const m=document.getElementById('somatic-meter');
+  const bar=document.getElementById('qm-bar');const grade=document.getElementById('qm-grade');
+  m.style.display='block';
+  let pct,col,gt;
+  if(v<200){pct=20;col='#4ade80';gt='Экстра-класс (<200 тыс./мл) — Merit Score +5 баллов';n.textContent='✓ Экстра-класс! Максимальный балл качества.';n.className='fnote ok';S.normScore=Math.min(15,S.normScore+5);}
+  else if(v<=400){pct=50;col='#86efac';gt='Норма (200–400 тыс./мл) — Merit Score +2 балла';n.textContent='✓ В норме — соответствует ГОСТ.';n.className='fnote ok';S.normScore=Math.min(15,S.normScore+2);}
+  else if(v<=500){pct=75;col='#fb923c';gt='Риск (400–500 тыс./мл) — балл снижается';n.textContent='⚠ Повышенное содержание — балл снижен.';n.className='fnote warn';S.normScore=Math.max(0,S.normScore-2);}
+  else{pct=100;col='#f87171';gt='Отклонение (>500 тыс./мл) — субсидия может быть отклонена';n.textContent='✗ Превышение нормы — заявка может быть отклонена.';n.className='fnote err';S.normScore=Math.max(0,S.normScore-5);}
+  bar.style.width=pct+'%';bar.style.background=col;grade.textContent=gt;grade.style.color=col;
+}
+
+function checkCowAge(){
+  const type=document.getElementById('f6-cow-type').value;const age=parseInt(document.getElementById('f6-cow-age').value)||0;
+  const n=document.getElementById('f6-age-note');if(!type||!age)return;
+  const min=type==='breed'?23:28;
+  if(age>=min){n.textContent=`✓ ${age} мес ≥ ${min} мес — норма для ${type==='breed'?'племенных':'товарных'} коров.`;n.className='fnote ok';S.normScore=Math.min(15,S.normScore+2);}
+  else{n.textContent=`✗ ${age} мес < ${min} мес (мин. для ${type==='breed'?'племенных':'товарных'}).`;n.className='fnote err';}
+}
+
+function chkBuyer(id,noteId){
+  const v=document.getElementById(id).value.replace(/\D/g,'').slice(0,12);document.getElementById(id).value=v;
+  const n=document.getElementById(noteId);
+  if(v.length===12){n.textContent='✓ Покупатель верифицирован — мощность 850 голов, статус активный';n.className='fnote ok';S.normScore=Math.min(15,S.normScore+2);}
+}
+
+function loadBullocks(){
+  const b=[
+    {inzh:'KZ-BK-0901',age:7,mom:'KZ-COW-0041',origin:'Хозяйство',ok:true},
+    {inzh:'KZ-BK-0902',age:8,mom:'KZ-COW-0055',origin:'Хозяйство',ok:true},
+    {inzh:'KZ-BK-0903',age:6,mom:'KZ-COW-0012',origin:'Хозяйство',ok:true},
+    {inzh:'KZ-BK-0904',age:9,mom:'—',origin:'Внешний',ok:false},
+  ];
+  const tbody=document.getElementById('bulls-tbody');tbody.innerHTML='';let errs=0;
+  b.forEach(x=>{if(!x.ok)errs++;const tr=document.createElement('tr');tr.innerHTML=`<td style="font-family:var(--mono)">${x.inzh}</td><td style="font-family:var(--mono)">${x.age}</td><td style="font-family:var(--mono)">${x.mom}</td><td>${x.origin}</td><td class="${x.ok?'s-ok':'s-err'}" style="font-family:var(--mono);font-size:10px">${x.ok?'✓ Родился здесь':'✗ Происхождение не подтверждено'}</td>`;tbody.appendChild(tr);});
+  document.getElementById('f9-bulls-table').style.display='block';
+  document.getElementById('f9-ai').style.display='block';
+  document.getElementById('f9-ai-text').innerHTML=`Загружено <strong>${b.length} бычков</strong>. Проверка «Мать–Приплод»: <strong style="color:var(--accent)">${b.length-errs}</strong> подтверждено. <strong style="color:var(--red)">${errs}</strong> — происхождение не подтверждено (перепродажа).<br>Поддержка воспроизводства, а не перепродажи.`;
+  S.normScore=Math.min(15,S.normScore+5);
+}
+
+function checkBullWeight(){
+  const w=parseFloat(document.getElementById('f9-weight').value)||0;const n=document.getElementById('f9-weight-note');
+  if(!w)return;
+  if(w<180){n.textContent=`✗ ${w} кг < 180 кг (мин.). Субсидия не применима.`;n.className='fnote err';}
+  else if(w>250){n.textContent=`⚠ ${w} кг > 250 кг (верхний порог субсидирования).`;n.className='fnote warn';}
+  else{n.textContent=`✓ ${w} кг — в диапазоне 180–250 кг. Субсидия применима.`;n.className='fnote ok';S.normScore=Math.min(15,S.normScore+3);}
+}
+
+// PAGE 4
+function calcResult(){
+  if(S.fraud){
+    document.getElementById('fraud-overlay').style.display='flex';
+    document.getElementById('fraud-desc').innerHTML='Заявка заблокирована из-за обнаруженной аномалии в соотношении быков и маток. Исправьте значения перед отправкой.';
+    return;
+  }
+  let infra=S.infraScore;
+  let prod=S.prodScore||(S.subType==='f1'?18:S.subType==='f9'?15:10);
+  let norm=Math.min(15,Math.max(0,S.normScore));
+  let land=S.landScore;
+  const total=Math.min(100,infra+prod+norm+land);
+  goPage(4);
+
+  setTimeout(()=>{
+    animNum('final-score',0,total,1100);
+    document.getElementById('app-num').textContent=String(31000+Math.floor(Math.random()*300));
+
+    let status,statusColor;
+    if(total>=80){status='✓ Рекомендовано к приоритетной выплате.';statusColor='var(--accent2)';}
+    else if(total>=60){status='◷ Рекомендовано — вторая очередь выплаты.';statusColor='var(--gold)';}
+    else{status='⚠ Требуется доработка заявки.';statusColor='var(--orange)';}
+
+    setTimeout(()=>{
+      document.getElementById('final-status').textContent=status;
+      document.getElementById('final-status').style.color=statusColor;
+    },1200);
+
+    const rank=total>=80?2:total>=60?Math.floor(Math.random()*14)+5:Math.floor(Math.random()*40)+30;
+    document.getElementById('shortlist-card').style.display='block';
+    document.getElementById('factor-wrap').style.display='block';
+    document.getElementById('result-bar').style.display='flex';
+    document.getElementById('rank-pos').textContent='#'+rank;
+    document.getElementById('rank-sub').textContent=`из 1500 заявок в Акмолинской области · Merit Score, а не время подачи`;
+
+    // Why list
+    const whys=[];
+    if(infra>=20&&S.milkingScore>=14)whys.push({pts:'+'+infra,text:`Использование автоматизированного доильного зала (+${S.milkingScore} баллов).`});
+    else if(infra>=15)whys.push({pts:'+'+infra,text:'Хорошая инфраструктура хозяйства (оборудование, водоснабжение).'});
+    else whys.push({pts:'+'+infra,text:'Базовая инфраструктура.'});
+    if(prod>=15)whys.push({pts:'+'+prod,text:`Рост объёмов ${S.subType==='f6'?'молока':S.subType==='f9'?'мясной продукции':'производства'} на ${prod>=25?'12%+':'до 12%'} за год.`});
+    whys.push({pts:'+'+norm,text:'Соблюдение ветеринарных норм по возрасту и происхождению скота.'});
+    if(land>=7)whys.push({pts:'+'+land,text:'Место в очереди: '+rank+' из 1500 (на основе Merit Score, а не времени подачи).'});
+    const wl=document.getElementById('why-list');wl.innerHTML='';
+    whys.forEach(w=>{wl.innerHTML+=`<div class="why-item"><div class="why-pts">${w.pts}</div><div>${w.text}</div></div>`;});
+
+    document.getElementById('fp-infra').textContent='+'+infra;
+    document.getElementById('fp-prod').textContent='+'+prod;
+    document.getElementById('fp-norm').textContent='+'+norm;
+    document.getElementById('fp-land').textContent='+'+land;
+    document.getElementById('fd-infra').textContent=S.milkingScore>=14?`Вкл. автоматизированный доильный зал (+${S.milkingScore} б.)`:'Оборудование, водоснабжение, сертификаты';
+    document.getElementById('fd-prod').textContent=prod>=25?'Рост производства +12% и более':prod>=15?'Положительная динамика производства':'Базовые показатели';
+
+    document.getElementById('result-ai').innerHTML=
+      `Итоговый балл: <strong>${total}/100</strong>. ${status}<br><br>
+      • Инфраструктура (+${infra}): ${infra>=30?'Высокий уровень':infra>=15?'Средний уровень':'Низкий уровень — рекомендуем развить'}.<br>
+      • Динамика производства (+${prod}): ${prod>=20?'Отличный рост — приоритетный фактор':prod>=10?'Положительная тенденция':'Нет роста'}.<br>
+      • Нормы (+${norm}): ${norm>=12?'Все нормативные требования выполнены':'Частично выполнены — есть зоны роста'}.<br>
+      • Земля (+${land}): ${land>=7?'Кормовая база достаточна по нормативам':'Риск недостаточности пастбищ — балл снижен'}.<br><br>
+      <strong style="color:var(--accent3)">Финальное решение остаётся за комиссией Министерства сельского хозяйства РК. AI — инструмент поддержки решений, а не замена эксперта.</strong>`;
+  },300);
+}
+
+function animNum(id,from,to,dur){
+  const el=document.getElementById(id);const s=performance.now();
+  (function u(t){const e=t-s,p=Math.min(e/dur,1),q=1-Math.pow(1-p,3);
+    el.textContent=Math.round(from+(to-from)*q);if(p<1)requestAnimationFrame(u);})(s);
+}
+</script>
+</body>
+</html>
