@@ -1,8 +1,6 @@
 # AIinDrive
 # AgroScoring — AI-driven Subsidy Distribution System
 
-# AIinDrive
-
 ## ML проект
 [Открыть notebook с результатами](https://eclipsen8.github.io/AIinDrive/ml-aiindrive-gov.html)
 
