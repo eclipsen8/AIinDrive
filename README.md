@@ -1,6 +1,11 @@
 # AIinDrive
 # AgroScoring — AI-driven Subsidy Distribution System
 
+# AIinDrive
+
+## ML проект
+[Открыть notebook с результатами](https://eclipsen8.github.io/AIinDrive/ml-aiindrive-gov.html)
+
 This project was developed during the **Decentrathon 5.0 Hackathon** for the **AI for Government (inDrive & Government of Kazakhstan)** track.
 
 ## 📌 Project Overview
